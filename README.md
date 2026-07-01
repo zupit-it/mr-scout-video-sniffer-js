@@ -113,19 +113,34 @@ const { result, probe } = await analyzeFile(file, mediaInfoFactory, {
 console.log(result.classification, result.score, result.reasons);
 ```
 
-### API esportata
+### API supportata (contratto stabile)
 
-| Funzione | Descrizione |
+Se integri questa libreria, **usa solo questa parte**. Segue semver: cambia solo
+con un bump **major**.
+
+| Funzione / tipo | Descrizione |
 |---|---|
-| `classify(probe)` | Logica pura → risultato completo. |
-| `isRecodedOrSuspect(probe)` | Booleano: `true` se sospetto/ricodificato. |
-| `analyzeFile(file, factory, opts?)` | Pipeline browser: `File` → mediainfo → predizione. |
-| `mediaInfoToProbe(result)` | Adatta l'output di `mediainfo.js` alla forma ffprobe. |
-| `extractProbe(file, mediainfo)` | Legge un `File` con un'istanza mediainfo già creata. |
-| `decimalAspectToRatio(v, isDisplay?)` | Helper aspect ratio decimale → rapporto. |
-| Costanti | `SUSPICIOUS_ENCODERS`, `GENERIC_BRANDS`, `THRESHOLD_RECODED`, `THRESHOLD_SUSPECT` |
+| `analyzeFile(file, factory, opts?)` | Pipeline browser: `File` → mediainfo → predizione. Punto d'ingresso lato browser. |
+| `classify(probe)` | Logica pura (nessuna dipendenza): utile lato server passando il JSON di ffprobe. |
+| `isRecodedOrSuspect(probe)` | Booleano di comodo sopra `classify`. |
+| Tipi `Probe`, `ClassifyResult`, `Classification`, … | La **forma** del risultato è stabile. |
 
-Tutti i tipi (`Probe`, `ClassifyResult`, …) sono esportati.
+### Interno (NON è contratto: può cambiare senza major)
+
+`mediaInfoToProbe`, `extractProbe`, `decimalAspectToRatio`, `parseRatio` e le
+costanti `SUSPICIOUS_ENCODERS`, `GENERIC_BRANDS`, `THRESHOLD_RECODED`,
+`THRESHOLD_SUSPECT` sono esportate per comodità/test, ma sono **dettagli
+implementativi**. Non costruirci sopra: possono cambiare in una minor.
+
+### Stabilità: cosa è garantito e cosa no
+
+Stabile = **firme delle funzioni e forma del risultato**. NON stabile = i
+**verdetti** (`classification`, `score`, `reasons`) di un dato video: sono
+un'euristica che evolve. Migliorare la rilevazione (nuove regex, nuove soglie,
+nuovi encoder) esce come **patch/minor**: chi dipende con `^` la riceve senza
+toccare il proprio codice. È voluto — usala come **filtro iniziale**, non come
+oracolo con output congelato. Se ti serve riproducibilità, **pinna una versione
+esatta**.
 
 ---
 
