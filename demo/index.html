@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Video Sniffer — demo (originale vs. ricodificato)</title>
+    <style>
+      :root {
+        --ok: #1a7f37;
+        --warn: #bf8700;
+        --bad: #cf222e;
+        --bg: #0d1117;
+        --panel: #161b22;
+        --border: #30363d;
+        --text: #e6edf3;
+        --muted: #8b949e;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.5;
+      }
+      main { max-width: 760px; margin: 0 auto; padding: 32px 20px 64px; }
+      h1 { font-size: 1.4rem; margin: 0 0 4px; }
+      p.sub { color: var(--muted); margin: 0 0 24px; }
+      #drop {
+        border: 2px dashed var(--border);
+        border-radius: 12px;
+        padding: 40px 20px;
+        text-align: center;
+        cursor: pointer;
+        transition: border-color 0.15s, background 0.15s;
+      }
+      #drop.hover { border-color: #58a6ff; background: rgba(88, 166, 255, 0.08); }
+      #drop input { display: none; }
+      .hint { color: var(--muted); font-size: 0.85rem; }
+      #status { margin: 20px 0; color: var(--muted); min-height: 1.4em; }
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 20px;
+        margin-top: 16px;
+      }
+      .verdict { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+      .badge {
+        font-weight: 700;
+        padding: 4px 12px;
+        border-radius: 999px;
+        font-size: 0.9rem;
+      }
+      .badge.ok { background: rgba(26,127,55,0.2); color: #3fb950; }
+      .badge.warn { background: rgba(191,135,0,0.2); color: #d29922; }
+      .badge.bad { background: rgba(207,34,46,0.2); color: #f85149; }
+      .score { color: var(--muted); }
+      table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 0.9rem; }
+      th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); }
+      th { color: var(--muted); font-weight: 500; width: 42%; }
+      td { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+      h3 { font-size: 0.95rem; margin: 20px 0 6px; }
+      ul.reasons { margin: 0; padding-left: 20px; }
+      ul.reasons li { margin: 4px 0; }
+      ul.reasons.empty { list-style: none; padding-left: 0; color: var(--muted); }
+      .error { color: #f85149; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Video Sniffer</h1>
+      <p class="sub">
+        Predizione <em>originale da fotocamera</em> vs. <em>ricodificato</em>,
+        interamente lato client. Reference per il team frontend.
+      </p>
+
+      <label id="drop">
+        <input type="file" id="file" accept="video/*,.mp4,.mov,.m4v,.mkv" />
+        <div><strong>Trascina qui un video</strong> o clicca per selezionarlo</div>
+        <div class="hint">Il file NON viene caricato su alcun server: l'analisi avviene nel browser (WASM).</div>
+      </label>
+
+      <div id="status"></div>
+      <div id="output"></div>
+    </main>
+
+    <script type="module">
+      // mediainfo.js dalla CDN (ESM + WebAssembly). In un progetto reale si
+      // installa da npm: `npm i mediainfo.js`.
+      import mediaInfoFactory from 'https://esm.sh/mediainfo.js@0.3.4';
+
+      // La libreria prodotta in questa storia (build ESM in dist/).
+      // Esegui prima `npm run build`, poi servi la cartella (vedi README).
+      import { analyzeFile } from '../dist/index.js';
+
+      const MEDIAINFO_VERSION = '0.3.4';
+      const drop = document.getElementById('drop');
+      const fileInput = document.getElementById('file');
+      const statusEl = document.getElementById('status');
+      const output = document.getElementById('output');
+
+      // mediainfo.js deve sapere dove trovare il file .wasm: lo puntiamo alla CDN.
+      const factoryOptions = {
+        locateFile: (path) => `https://esm.sh/mediainfo.js@${MEDIAINFO_VERSION}/dist/${path}`,
+      };
+
+      const badgeClass = (c) =>
+        c === 'COMPATIBILE_CON_ORIGINALE' ? 'ok'
+        : c === 'SOSPETTO_RICODIFICA' ? 'warn'
+        : 'bad';
+
+      const esc = (s) =>
+        String(s).replace(/[&<>]/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
+
+      function render({ result }) {
+        const v = result.video;
+        const m = result.metadata;
+        const reasons = result.reasons.length
+          ? `<ul class="reasons">${result.reasons.map((r) => `<li>${esc(r)}</li>`).join('')}</ul>`
+          : `<ul class="reasons empty">Nessun indicatore rilevato</ul>`;
+
+        output.innerHTML = `
+          <div class="card">
+            <div class="verdict">
+              <span class="badge ${badgeClass(result.classification)}">${esc(result.classification)}</span>
+              <span class="score">Punteggio: ${result.score}</span>
+            </div>
+            <h3>Video</h3>
+            <table>
+              <tr><th>Codec / profilo</th><td>${esc(v.codec || '?')} ${esc(v.profile || '')}</td></tr>
+              <tr><th>Risoluzione</th><td>${v.width}x${v.height}</td></tr>
+              <tr><th>SAR / DAR</th><td>${esc(v.sample_aspect_ratio || 'N/D')} / ${esc(v.display_aspect_ratio || 'N/D')}</td></tr>
+              <tr><th>FPS</th><td>${v.fps != null ? v.fps.toFixed(2) : '?'}</td></tr>
+              <tr><th>Bitrate</th><td>${v.bitrate_mbps.toFixed(2)} Mbps</td></tr>
+            </table>
+            <h3>Metadata</h3>
+            <table>
+              <tr><th>Encoder</th><td>${esc(m.encoder || 'N/D')}</td></tr>
+              <tr><th>Major brand</th><td>${esc(m.major_brand || 'N/D')}</td></tr>
+              <tr><th>Compatible brands</th><td>${esc(m.compatible || 'N/D')}</td></tr>
+            </table>
+            <h3>Motivazioni</h3>
+            ${reasons}
+          </div>`;
+      }
+
+      async function handleFile(file) {
+        if (!file) return;
+        output.innerHTML = '';
+        statusEl.textContent = `Analisi di "${file.name}" in corso…`;
+        try {
+          const analysis = await analyzeFile(file, mediaInfoFactory, factoryOptions);
+          statusEl.textContent = '';
+          render(analysis);
+        } catch (err) {
+          console.error(err);
+          statusEl.innerHTML = `<span class="error">Errore: ${esc(err.message || err)}</span>`;
+        }
+      }
+
+      fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+
+      ['dragenter', 'dragover'].forEach((ev) =>
+        drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add('hover'); }),
+      );
+      ['dragleave', 'drop'].forEach((ev) =>
+        drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove('hover'); }),
+      );
+      drop.addEventListener('drop', (e) => handleFile(e.dataTransfer.files[0]));
+    </script>
+  </body>
+</html>
