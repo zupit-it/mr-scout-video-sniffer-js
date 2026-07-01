@@ -28,21 +28,21 @@ result.score;          // number
 result.reasons;        // string[] — perché
 ```
 
-### Un passo di setup: il file WASM
+Funziona così com'è: il motore `.wasm` viene scaricato da CDN. Il **video non
+lascia mai il browser**, si scarica solo il wasm (statico, pubblico).
 
-L'analisi usa un file `.wasm`. Il bundler deve servirlo come asset statico e tu
-indichi dove si trova con `locateFile`.
+### Offline / self-host (opzionale)
 
-**Angular** — in `angular.json`, sotto `architect.build.options.assets`:
+Per non usare la CDN (offline, CSP restrittive) servi il `.wasm` come asset e
+indicalo con `locateFile`. **Angular** — in `angular.json`, sotto
+`architect.build.options.assets`:
 
 ```jsonc
 { "glob": "*.wasm", "input": "node_modules/mediainfo.js/dist", "output": "assets/mediainfo" }
 ```
 
 ```ts
-const { result } = await analyzeFile(file, {
-  locateFile: (path) => `/assets/mediainfo/${path}`,
-});
+await analyzeFile(file, { locateFile: (p) => `/assets/mediainfo/${p}` });
 ```
 
 ## API

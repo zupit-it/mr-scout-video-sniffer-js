@@ -51,12 +51,19 @@ export interface AnalyzeFileOutput {
   probe: Probe;
 }
 
+/**
+ * CDN da cui caricare il `.wasm` di mediainfo.js di default. La versione DEVE
+ * combaciare con la dependency `mediainfo.js` in package.json (glue e wasm sono
+ * accoppiati).
+ */
+const MEDIAINFO_WASM_CDN = 'https://cdn.jsdelivr.net/npm/mediainfo.js@0.3.7/dist/';
+
 /** Opzioni di `analyzeFile` (inoltrate a mediainfo.js). */
 export interface AnalyzeFileOptions {
   /**
-   * Dove trovare il file `.wasm` di mediainfo.js. In un'app con bundler il WASM
-   * va servito come asset statico e indicato qui.
-   * Es. Angular: `(path) => '/assets/mediainfo/' + path`.
+   * Dove trovare il file `.wasm`. Di default viene preso dalla CDN, quindi non
+   * serve configurare nulla. Passalo solo per self-hostarlo (offline / no-CDN):
+   * copia il `.wasm` tra gli asset e punta qui, es. `(p) => '/assets/mediainfo/' + p`.
    */
   locateFile?: (path: string) => string;
   [key: string]: unknown;
@@ -79,7 +86,13 @@ export async function analyzeFile(
   const { default: mediaInfoFactory } = (await import('mediainfo.js')) as unknown as {
     default: MediaInfoFactory;
   };
-  const mediainfo = await mediaInfoFactory({ format: 'object', ...options });
+  const mediainfo = await mediaInfoFactory({
+    format: 'object',
+    // Default: wasm dalla CDN, cosi' analyzeFile(file) funziona senza setup.
+    // options.locateFile (se passato) lo sovrascrive per self-host/offline.
+    locateFile: (path: string) => `${MEDIAINFO_WASM_CDN}${path}`,
+    ...options,
+  });
   try {
     const probe = await extractProbe(file, mediainfo);
     return { result: classify(probe), probe };
