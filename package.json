@@ -1,6 +1,6 @@
 {
   "name": "video-sniffer-js",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Predizione client-side (browser/WASM) di video originale da fotocamera vs. ricodificato, analizzando i metadati. Framework-agnostica: usabile da Angular, React o vanilla.",
   "keywords": [
     "video",
