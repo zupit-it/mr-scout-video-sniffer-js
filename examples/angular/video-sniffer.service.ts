@@ -2,7 +2,7 @@
  * ESEMPIO DI INTEGRAZIONE ANGULAR (client-side).
  *
  * Copia questo service nel tuo progetto Angular dopo aver installato:
- *   npm i video-sniffer-js mediainfo.js
+ *   npm i video-sniffer-js
  *
  * e aver configurato la copia del WASM come asset statico (vedi README, sezione
  * "Integrazione Angular"). Questo file e' solo un riferimento, non viene
@@ -10,7 +10,6 @@
  */
 import { Injectable, inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import mediaInfoFactory from 'mediainfo.js';
 import { analyzeFile, type AnalyzeFileOutput } from 'video-sniffer-js';
 
 @Injectable({ providedIn: 'root' })
@@ -26,7 +25,7 @@ export class VideoSnifferService {
       throw new Error('VideoSnifferService.analyze e\' disponibile solo nel browser.');
     }
 
-    return analyzeFile(file, mediaInfoFactory, {
+    return analyzeFile(file, {
       // Il .wasm e' servito come asset statico (vedi angular.json).
       locateFile: (path: string) => `/assets/mediainfo/${path}`,
     });

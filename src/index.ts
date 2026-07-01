@@ -51,20 +51,35 @@ export interface AnalyzeFileOutput {
   probe: Probe;
 }
 
+/** Opzioni di `analyzeFile` (inoltrate a mediainfo.js). */
+export interface AnalyzeFileOptions {
+  /**
+   * Dove trovare il file `.wasm` di mediainfo.js. In un'app con bundler il WASM
+   * va servito come asset statico e indicato qui.
+   * Es. Angular: `(path) => '/assets/mediainfo/' + path`.
+   */
+  locateFile?: (path: string) => string;
+  [key: string]: unknown;
+}
+
 /**
- * Pipeline completa nel browser: File video -> metadati (mediainfo.js) -> predizione.
+ * Analizza un file video nel browser e ne predice l'origine.
+ * mediainfo.js e' importato internamente: non serve passarlo.
  *
- * @param file il file video da analizzare
- * @param mediaInfoFactory la factory di default di mediainfo.js (`import mediaInfoFactory from 'mediainfo.js'`)
- * @param factoryOptions opzioni per mediaInfoFactory (es. `locateFile` per il WASM)
+ * @param file il file video (es. da un `<input type="file">`)
+ * @param options opzioni per il WASM (vedi `locateFile`)
  * @returns `result` = output di classify(); `probe` = metadati grezzi normalizzati.
  */
 export async function analyzeFile(
   file: Blob,
-  mediaInfoFactory: MediaInfoFactory,
-  factoryOptions: Record<string, unknown> = {},
+  options: AnalyzeFileOptions = {},
 ): Promise<AnalyzeFileOutput> {
-  const mediainfo = await mediaInfoFactory({ format: 'object', ...factoryOptions });
+  // Cast al nostro tipo (volutamente piu' largo): mediainfo.js ha tipi piu'
+  // stretti, ma noi leggiamo campi arbitrari dalle tracce.
+  const { default: mediaInfoFactory } = (await import('mediainfo.js')) as unknown as {
+    default: MediaInfoFactory;
+  };
+  const mediainfo = await mediaInfoFactory({ format: 'object', ...options });
   try {
     const probe = await extractProbe(file, mediainfo);
     return { result: classify(probe), probe };
