@@ -44,5 +44,3 @@ lascia mai il browser**, si scarica solo il wasm (statico, pubblico).
 | `analyzeFile(file, options?)` | Analisi completa nel browser → `{ result, probe }`. |
 | `isRecodedOrSuspect(probe)` | `true` se sospetto/ricodificato. |
 | `classify(probe)` | Solo scoring, se i metadati li hai già (es. JSON di ffprobe lato server). |
-
-MIT

@@ -14,7 +14,6 @@
     "wasm",
     "angular"
   ],
-  "license": "MIT",
   "author": "Simonpaolo Lopez",
   "repository": {
     "type": "git",
@@ -38,8 +37,7 @@
   },
   "files": [
     "dist",
-    "README.md",
-    "LICENSE"
+    "README.md"
   ],
   "scripts": {
     "build": "tsup",
