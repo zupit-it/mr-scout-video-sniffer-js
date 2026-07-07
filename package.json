@@ -1,5 +1,5 @@
 {
-  "name": "video-sniffer-js",
+  "name": "@zupit-it/mr-scout-video-sniffer-js",
   "version": "0.2.1",
   "description": "Predizione client-side (browser/WASM) di video originale da fotocamera vs. ricodificato, analizzando i metadati. Framework-agnostica: usabile da Angular, React o vanilla.",
   "keywords": [
@@ -18,11 +18,11 @@
   "author": "Simonpaolo Lopez",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/simone-lopez-zupit/video-sniffer-js.git"
+    "url": "git+https://github.com/zupit-it/mr-scout-video-sniffer-js.git"
   },
-  "homepage": "https://github.com/simone-lopez-zupit/video-sniffer-js#readme",
+  "homepage": "https://github.com/zupit-it/mr-scout-video-sniffer-js#readme",
   "bugs": {
-    "url": "https://github.com/simone-lopez-zupit/video-sniffer-js/issues"
+    "url": "https://github.com/zupit-it/mr-scout-video-sniffer-js/issues"
   },
   "type": "module",
   "sideEffects": false,
@@ -60,6 +60,7 @@
     "node": ">=18"
   },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "registry": "https://npm.pkg.github.com"
   }
 }
